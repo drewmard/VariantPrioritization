@@ -96,7 +96,7 @@ for (i in startInd:M) {
   # R = computeLD(trait,lead_snp,i,chrNum=substring(df.sub$chr,4))
   R = computeLD(trait,lead_snp,i,chrNum=df.sub$chr)
   z_scores = df.gwas.sub2$z
-  lead_snp_ind = which(df.gwas.sub2$rsid==lead_snp)
+  lead_snp_ind = which(df.gwas.sub2$snp_id==lead_snp)
   LD_modify.list = LD_modify(R,z_scores,lead_snp_ind); R = LD_modify.list[[1]]; z_scores = LD_modify.list[[2]]; l = LD_modify.list[[3]]
   
   ######################################################
@@ -116,7 +116,7 @@ for (i in startInd:M) {
         R = computeLD(trait,lead_snp,i,chrNum=df.sub$chr,eurONLY=FALSE)
         # R = computeLD(trait,lead_snp,i,chrNum=substring(df.sub$chr,4),eurONLY=FALSE)
         z_scores = df.gwas.sub2$z
-        lead_snp_ind = which(df.gwas.sub2$rsid==lead_snp)
+        lead_snp_ind = which(df.gwas.sub2$snp_id==lead_snp)
         LD_modify.list = LD_modify(R,z_scores,lead_snp_ind); R = LD_modify.list[[1]]; z_scores = LD_modify.list[[2]]; l = LD_modify.list[[3]]
         # run susie:
         rss <- susie_rss(z_scores, as.matrix(R), n=NINDIV, L = Lval)

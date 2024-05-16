@@ -290,7 +290,7 @@ process_susie_results = function(df,rss) {
   cat(paste0("Parsing susieR results...\n"))
   
   va<-summary(rss)$vars
-  va$snp<-df$rsid[va$variable]
+  va$snp<-df$snp_id[va$variable]
   va$chr<-df$chr[va$variable]
   va$pos<-df$snp_pos[va$variable]
   va = va[,2:4]
@@ -300,8 +300,8 @@ process_susie_results = function(df,rss) {
   converge_status = rss$converged
   log_bayes = as.data.frame(rss$lbf_variable)
   pip =  as.data.frame(rss$alpha)
-  colnames(log_bayes) = df$rsid
-  colnames(pip) = df$rsid
+  colnames(log_bayes) = df$snp_id
+  colnames(pip) = df$snp_id
   
   suppressMessages(suppressWarnings(library(tidyr)))
   suppressMessages(suppressWarnings(library(dplyr)))
@@ -327,7 +327,7 @@ process_susie_results = function(df,rss) {
       
       # use the variant indices ("variables" in susie output) 
       # to extract the variant IDs from the input data and collapse to a single field
-      mutate(variant_ids = paste0(df[as.numeric(unlist(strsplit(variable,","))),]$rsid, collapse=", ")) %>% 
+      mutate(variant_ids = paste0(df[as.numeric(unlist(strsplit(variable,","))),]$snp_id, collapse=", ")) %>% 
       
       # use the variant IDs in each row (each independent credible set)
       # to look up the log10bf and posterior prob of inclusion (PIP) for each SNP in the credible set;
@@ -365,10 +365,10 @@ process_susie_results = function(df,rss) {
     mutate(kb_window = kbthres_to_use)
   cred_sets = as.data.frame(cred_sets)
   
-  tmp = subset(df.gwas,rsid==lead_snp)
+  tmp = subset(df.gwas,snp_id==lead_snp)
   cred_sets$chr = tmp$chr
   cred_sets$pos = tmp$snp_pos
-  cred_sets$chrpos = paste0(subset(tmp,rsid==lead_snp)$chr,"_",subset(tmp,rsid==lead_snp)$snp_pos)
+  cred_sets$chrpos = paste0(subset(tmp,snp_id==lead_snp)$chr,"_",subset(tmp,snp_id==lead_snp)$snp_pos)
   cred_sets$numsnptested = nrow(va)
   
   #################
