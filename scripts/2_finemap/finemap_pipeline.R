@@ -9,34 +9,24 @@ suppressMessages(suppressWarnings(library(data.table)))
 suppressMessages(suppressWarnings(library(susieR)))
 suppressMessages(suppressWarnings(library(tidyr)))
 suppressMessages(suppressWarnings(library(dplyr)))
+suppressMessages(suppressWarnings(library(jsonlite)))
 source("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/scripts/2_finemap/finemap_pipeline_functions.R")
 print("Packages and functions loaded.")
 
 # parameters:
 # trait <- "Lupus_Bentham_2015"; newGWAS = TRUE
-# trait="Alzheimers_Bellenguez_2022"
+trait="Alzheimers_Bellenguez_2022"
 args <- commandArgs(trailingOnly = TRUE)
 trait <- args[1]
 startInd <- ifelse(length(args) < 2,1,as.numeric(args[2]))
 
-configFileName = "/oak/stanford/groups/smontgom/amarder/HarmonizeGWAS/config/munge.config"
-config = fromJSON(configFileName)
-filePath = paste0(config$output_base_dir,"hg38","/",trait,"/",trait,".txt.gz")
-
-df = fread(,data.table = F,stringsAsFactors = F)
-
-colocalRef <- fread("/oak/stanford/groups/smontgom/amarder/neuro-variants/scripts/snps/helper_func/colocal.csv",data.table = F,stringsAsFactors = F)
-colnames(colocalRef)[1] = "traitName" # compatibility issues
-newGWAS <- as.logical(subset(colocalRef,traitName==trait)$newGWAS)
-
-
 ##########################################################################
 
-# stanford cluster-specific info
 # can also hard call the GWAS file path and number of individuals in the GWAS
-info.lst = marderstein_collect_info(trait,newGWAS)
-filePath=info.lst[[1]]
-NINDIV=info.lst[[2]]
+configFileName = "/oak/stanford/groups/smontgom/amarder/HarmonizeGWAS/config/munge.config"
+config = fromJSON(configFileName)
+filePath = paste0(config$output_base_dir,"hg38","/",trait,"/",trait,".v2.txt.gz")
+NINDIV = as.numeric(config$studies[config$studies$study_info==trait,"NINDIV"])
 
 ##########################################################################
 
@@ -52,7 +42,7 @@ df.gwas <- fread(filePath,data.table = F,stringsAsFactors = F)
 # df.ld_expand=fread(f.ld_expand,data.table = F,stringsAsFactors = F)
 # lead_snp_lst = unique(df.ld_expand$lead) # if only want to do GWAS snps, do this: unique(subset(df.ld_expand,rsid==lead & info=="GWAS")$lead)
 
-f.lead = paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/leadsnp/window_1000000/",trait,".lead.txt")
+f.lead = paste0("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/leadsnp/window_1000000/",trait,".lead.txt")
 lead_snp_lst = fread(f.lead,data.table = F,stringsAsFactors = F,header = F)[,1]
 M = length(lead_snp_lst)
 print(paste0(M," unique GWAS loci total..."))
@@ -60,13 +50,13 @@ print(paste0(M," unique GWAS loci total..."))
 ##########################################################################
 
 print(paste0("Finemapping, starting at index ",startInd,"..."))
-startInd=1
 for (i in startInd:M) {
   
   lead_snp = lead_snp_lst[i]
   
   # Extract data
-  autosomal=(subset(df.gwas,rsid==lead_snp)$chr %in% seq(1,22))
+  df.sub = subset(df.gwas,snp_id==lead_snp)
+  autosomal=(df.sub$chr %in% seq(1,22))
   if (!autosomal) {
     print(paste0('Skipping GWAS region ',i,' with sentinel SNP ',lead_snp,"."))
     print(paste0("GWAS region is a non-autosomal SNP (or has a messed up chromosome name)."))
@@ -74,14 +64,13 @@ for (i in startInd:M) {
   }
   
   ####
-  f.cred_sets = paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/SUSIE/window.L_10/",i,".",lead_snp,".susie.cred_sets.txt")
+  f.cred_sets = paste0("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/finemap/",trait,"/SUSIE/window.L_10/",i,".",lead_snp,".susie.cred_sets.txt")
   if (file.exists(f.cred_sets)) {
     cred_sets = fread(f.cred_sets,data.table = F,stringsAsFactors = F)
     if (cred_sets$converged[1] != "FALSE" | is.na(cred_sets$converged[1])) {next}
   }
   
   # input: df.sub
-  df.sub = subset(df.gwas,rsid==lead_snp)
   bad_region = bad_region_function(chrNum=df.sub[,"chr"],posNum=df.sub[,"snp_pos"],remove_regions=NULL)
   # df.sub = subset(df.ld_expand,rsid==lead_snp)
   # bad_region = bad_region_function(chrNum=substring(df.sub$chr,4),posNum=df.sub[,"1_based_pos"],remove_regions=NULL)

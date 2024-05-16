@@ -45,15 +45,15 @@ marderstein_collect_info = function(phenotype,newGWAS=NULL) {
 }
 
 create_relevant_directories <- function(trait) {
-  suppressMessages(suppressWarnings(dir.create("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap")))
-  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait))))
-  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/SNPLIST"))))
-  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/LD"))))
-  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/SUSIE"))))
-  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/SUSIE/ldbuddy.L_1"))))
-  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/SUSIE/ldbuddy.L_10"))))
-  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/SUSIE/window.L_1"))))
-  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/SUSIE/window.L_10"))))
+  suppressMessages(suppressWarnings(dir.create("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/finemap")))
+  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/finemap/",trait))))
+  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/finemap/",trait,"/SNPLIST"))))
+  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/finemap/",trait,"/LD"))))
+  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/finemap/",trait,"/SUSIE"))))
+  # suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/SUSIE/ldbuddy.L_1"))))
+  # suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/SUSIE/ldbuddy.L_10"))))
+  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/finemap/",trait,"/SUSIE/window.L_1"))))
+  suppressMessages(suppressWarnings(dir.create(paste0("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/finemap/",trait,"/SUSIE/window.L_10"))))
 }
 
 # check whether this SNP should be run:
@@ -116,63 +116,65 @@ reorganize_gwas = function(df.gwas.sub,chrNum) {
   print(paste0("Removing NA z-scores..."))
   df.gwas.sub = subset(df.gwas.sub,!is.na(z))
   
-  ####################################################
-  # Next, account for strand flip + reverse alleles:
-  # When comparing sumstats (GWAS) to genotype ref (1000G),
-  # A/C in sumstats and C/A in the ref is fine,
-  # the sumstats just need to be reversed (multiplying Z-score by -1).
-  # However, A/C and A/G is not fine.
-  # A/G and T/C is the same, just needs to be flipped according to strand.
-  # Same with A/G and C/T, but need to flip AND reverse.
-  # This function handles all the above.
-  # However:
-  # We are going to keep SNPs on ambiguous strands (e.g. A/T, C/G),
-  # but maybe these should be removed?
+  # ####################################################
+  # # Next, account for strand flip + reverse alleles:
+  # # When comparing sumstats (GWAS) to genotype ref (1000G),
+  # # A/C in sumstats and C/A in the ref is fine,
+  # # the sumstats just need to be reversed (multiplying Z-score by -1).
+  # # However, A/C and A/G is not fine.
+  # # A/G and T/C is the same, just needs to be flipped according to strand.
+  # # Same with A/G and C/T, but need to flip AND reverse.
+  # # This function handles all the above.
+  # # However:
+  # # We are going to keep SNPs on ambiguous strands (e.g. A/T, C/G),
+  # # but maybe these should be removed?
+  # 
+  # flip_reverse <- function(ss,info_ref) {
+  #   flip_strand <- function(allele) {
+  #     dplyr::case_when(
+  #       allele == "A" ~ "T",
+  #       allele == "C" ~ "G",
+  #       allele == "T" ~ "A",
+  #       allele == "G" ~ "C",
+  #       TRUE ~ NA_character_
+  #     )
+  #   }
+  #   
+  #   # ss2 is original sumstats
+  #   ss2 <- ss
+  #   
+  #   # ss3 is reversed sumstats
+  #   ss3 <- ss
+  #   ss3$effect_allele <- ss$non_effect_allele
+  #   ss3$non_effect_allele <- ss$effect_allele
+  #   ss3$z <- -ss$z
+  #   
+  #   #ss3 becomes original + reversed sumstats
+  #   ss3 <- rbind(ss2, ss3) #####
+  #   rm(ss2)
+  #   
+  #   # for non-ambiguous snps, do strand flip:
+  #   ss4 <- ss3[!((ss3$non_effect_allele == "A" & ss3$effect_allele == "T") |
+  #                  (ss3$non_effect_allele == "T" & ss3$effect_allele == "A") |
+  #                  (ss3$non_effect_allele == "G" & ss3$effect_allele == "C") |
+  #                  (ss3$non_effect_allele == "C" & ss3$effect_allele == "G")),]
+  #   ss4$effect_allele <- flip_strand(ss4$effect_allele)
+  #   ss4$non_effect_allele <- flip_strand(ss4$non_effect_allele)
+  #   
+  #   #ss4 becomes original + reversed + strand flip original + strand flip reverse sumstats
+  #   ss4 <- rbind(ss3, ss4) ######
+  #   ss.matched <- merge(ss4, info_ref[,c("snpid_ref","POS","A1","A2")], 
+  #                       by.x=c("snp_pos","effect_allele","non_effect_allele"),by.y=c("POS","A2","A1"), all = FALSE)
+  #   return(ss.matched)
+  # }
+  # df.geno = df.geno[,c(2,4,5,6)]
+  # colnames(df.geno) <- c("snpid_ref","POS","A1","A2")
+  # df.gwas.sub2 = flip_reverse(df.gwas.sub,info_ref = df.geno)
+  # 
+  # # remove duplicated SNPs:
+  # df.gwas.sub2 <- subset(df.gwas.sub2,!duplicated(snpid_ref))
   
-  flip_reverse <- function(ss,info_ref) {
-    flip_strand <- function(allele) {
-      dplyr::case_when(
-        allele == "A" ~ "T",
-        allele == "C" ~ "G",
-        allele == "T" ~ "A",
-        allele == "G" ~ "C",
-        TRUE ~ NA_character_
-      )
-    }
-    
-    # ss2 is original sumstats
-    ss2 <- ss
-    
-    # ss3 is reversed sumstats
-    ss3 <- ss
-    ss3$effect_allele <- ss$non_effect_allele
-    ss3$non_effect_allele <- ss$effect_allele
-    ss3$z <- -ss$z
-    
-    #ss3 becomes original + reversed sumstats
-    ss3 <- rbind(ss2, ss3) #####
-    rm(ss2)
-    
-    # for non-ambiguous snps, do strand flip:
-    ss4 <- ss3[!((ss3$non_effect_allele == "A" & ss3$effect_allele == "T") |
-                   (ss3$non_effect_allele == "T" & ss3$effect_allele == "A") |
-                   (ss3$non_effect_allele == "G" & ss3$effect_allele == "C") |
-                   (ss3$non_effect_allele == "C" & ss3$effect_allele == "G")),]
-    ss4$effect_allele <- flip_strand(ss4$effect_allele)
-    ss4$non_effect_allele <- flip_strand(ss4$non_effect_allele)
-    
-    #ss4 becomes original + reversed + strand flip original + strand flip reverse sumstats
-    ss4 <- rbind(ss3, ss4) ######
-    ss.matched <- merge(ss4, info_ref[,c("snpid_ref","POS","A1","A2")], 
-                        by.x=c("snp_pos","effect_allele","non_effect_allele"),by.y=c("POS","A2","A1"), all = FALSE)
-    return(ss.matched)
-  }
-  df.geno = df.geno[,c(2,4,5,6)]
-  colnames(df.geno) <- c("snpid_ref","POS","A1","A2")
-  df.gwas.sub2 = flip_reverse(df.gwas.sub,info_ref = df.geno)
-
-  # remove duplicated SNPs:
-  df.gwas.sub2 <- subset(df.gwas.sub2,!duplicated(snpid_ref))
+  df.gwas.sub2 = subset(df.gwas.sub,snp_id %in% df.geno[,2])
   
   # order SNPs by basepair position:
   df.gwas.sub2 <- df.gwas.sub2[order(df.gwas.sub2$snp_pos),]
@@ -182,9 +184,9 @@ reorganize_gwas = function(df.gwas.sub,chrNum) {
 computeLD = function(trait,lead_snp,i,chrNum,ldcalc=TRUE,eurONLY=TRUE) {
   
   print("Saving SNPLIST...")
-
+  
   SNPLIST = paste0("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/finemap/",trait,"/SNPLIST/",i,".",lead_snp,".snp.txt")
-  tmpout = as.data.frame(df.gwas.sub2$snpid_ref)
+  tmpout = as.data.frame(df.gwas.sub2$snp_id)
   fwrite(tmpout,SNPLIST,quote = F,na = "NA",sep = '\t',row.names = F,col.names = F)
   
   print("Saving LDDATA...")
@@ -223,7 +225,7 @@ LD_modify = function(R,z_scores,lead_snp_ind) {
   # - then we flag all problem SNP-SNP combinations, 
   # - and randomly remove 1 SNP from the SNP-SNP set (case 2)
   # - finally, we aim to retain the lead snp in the analysis
-
+  
   # initialize
   j = rep(TRUE,nrow(R))
   to_drop=c() 
@@ -243,7 +245,7 @@ LD_modify = function(R,z_scores,lead_snp_ind) {
       # z_scores = z_scores[j]
       cat(paste("  ", sum(!j), "case 1 variants to be removed from final analysis...\n"))
     }
-
+    
     
     # Next we flag case 2 variants:
     
@@ -254,7 +256,7 @@ LD_modify = function(R,z_scores,lead_snp_ind) {
     
     # get row numbers of rows containing missing value
     to_drop <- which(is.na(as.data.frame(tmp)), arr.ind=TRUE)[,'row'] %>% unique()
-
+    
     # don't remove lead snp - remove the other snp instead
     if (lead_snp_ind %in% to_drop) {
       to_drop = to_drop[!(to_drop %in% lead_snp_ind)]
@@ -279,7 +281,7 @@ LD_modify = function(R,z_scores,lead_snp_ind) {
   if (length(to_drop) > 0) {l = l[-to_drop]}
   
   cat(paste("  ", nrow(R), "variants kept for final analysis\n"))
-
+  
   return(list(R,z_scores,l))
 }
 
