@@ -1,0 +1,1 @@
+The 1000G processing scripts in plink directory are written by Soumya Kundu.
