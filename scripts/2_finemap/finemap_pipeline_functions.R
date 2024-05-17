@@ -181,7 +181,7 @@ reorganize_gwas = function(df.gwas.sub,chrNum) {
   return(df.gwas.sub2)
 }
 
-computeLD = function(trait,lead_snp,i,chrNum,ldcalc=TRUE,eurONLY=TRUE) {
+computeLD = function(trait,lead_snp,i,chrNum,ldcalc=TRUE,eurONLY=FALSE) {
   
   print("Saving SNPLIST...")
   
@@ -258,10 +258,12 @@ LD_modify = function(R,z_scores,lead_snp_ind) {
     to_drop <- which(is.na(as.data.frame(tmp)), arr.ind=TRUE)[,'row'] %>% unique()
     
     # don't remove lead snp - remove the other snp instead
-    if (lead_snp_ind %in% to_drop) {
-      to_drop = to_drop[!(to_drop %in% lead_snp_ind)]
-      to_drop = unique(c(to_drop,which(is.na(tmp[lead_snp_ind,]))))
-      # to_drop = unique(c(to_drop,which(is.na(R[lead_snp_ind,]))))
+    if (length(lead_snp_ind > 0)) { # incase lead snp is not in 1000G for whatever reason (low AF, or no allele match)
+      if (lead_snp_ind %in% to_drop) {
+        to_drop = to_drop[!(to_drop %in% lead_snp_ind)]
+        to_drop = unique(c(to_drop,which(is.na(tmp[lead_snp_ind,]))))
+        # to_drop = unique(c(to_drop,which(is.na(R[lead_snp_ind,]))))
+      }
     }
     cat(paste("  ", length(to_drop), "case 2 variants to be removed from final analysis...\n"))
     
@@ -333,8 +335,8 @@ process_susie_results = function(df,rss) {
       # to look up the log10bf and posterior prob of inclusion (PIP) for each SNP in the credible set;
       # round these values to 3 sigfigs, and collapse to a single field
       mutate(variant_log10bf = paste0(round(log_bayes[cs, unlist(strsplit(variant_ids,", "))],3), collapse=", ")) %>%
-      mutate(variant_pip = paste0(signif(pip[cs, unlist(strsplit(variant_ids,", "))],3), collapse=", ")) %>% 
-      
+      mutate(variant_pip = paste0(signif(pip[cs, unlist(strsplit(variant_ids,", "))],3), collapse=", ")) %>% # %>% as.data.frame(); cred_set_summary
+
       # Extract the maximum SNP-level log10bf and PIP for each credible set
       mutate(top_log10bf = max(as.numeric(unlist(strsplit(variant_log10bf,", "))))) %>% 
       mutate(top_pip = max(as.numeric(unlist(strsplit(variant_pip,", "))))) %>% 

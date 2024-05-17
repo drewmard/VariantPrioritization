@@ -2,6 +2,8 @@
 
 # srun --account=default --partition=interactive --time=24:00:00 --mem=64G --nodes=1 --ntasks=1 --cpus-per-task=1 --pty bash
 
+# conda activate r
+
 # trait <- "Lupus_Bentham_2015"; newGWAS = TRUE
 
 print("Loading packages and functions...")
@@ -91,6 +93,7 @@ for (i in startInd:M) {
   df.gwas.sub = gwas_subset.lst[[1]]; kbthres_to_use = gwas_subset.lst[[2]]
   # df.gwas.sub2 = reorganize_gwas(df.gwas.sub,chrNum=substring(df.sub$chr,4))
   df.gwas.sub2 = reorganize_gwas(df.gwas.sub,chrNum=df.sub$chr)
+  df.gwas.sub2 = subset(df.gwas.sub2,!duplicated(df.gwas.sub2$snp_id))
 
   # Compute LD:
   # R = computeLD(trait,lead_snp,i,chrNum=substring(df.sub$chr,4))
@@ -134,10 +137,10 @@ for (i in startInd:M) {
   
   cred_sets
   
-  f.va = paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/SUSIE/window.L_10/",i,".",lead_snp,".susie.variant_prob.txt")
+  f.va = paste0("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/finemap/",trait,"/SUSIE/window.L_10/",i,".",lead_snp,".susie.variant_prob.txt")
   fwrite(va,f.va,quote = F,na = "NA",sep = "\t",row.names = F,col.names = T)
   
-  f.cred_sets = paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/SUSIE/window.L_10/",i,".",lead_snp,".susie.cred_sets.txt")
+  f.cred_sets = paste0("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/finemap/",trait,"/SUSIE/window.L_10/",i,".",lead_snp,".susie.cred_sets.txt")
   fwrite(cred_sets,f.cred_sets,quote = F,na = "NA",sep = "\t",row.names = F,col.names = T)
 
   print("Running susie window.L_1")
@@ -149,12 +152,13 @@ for (i in startInd:M) {
   cred_sets
   
   # and save susie results!
-  f.va = paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/SUSIE/window.L_1/",i,".",lead_snp,".susie.variant_prob.txt")
+  f.va = paste0("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/finemap/",trait,"/SUSIE/window.L_1/",i,".",lead_snp,".susie.variant_prob.txt")
   fwrite(va,f.va,quote = F,na = "NA",sep = "\t",row.names = F,col.names = T)
   
-  f.cred_sets = paste0("/oak/stanford/groups/smontgom/amarder/neuro-variants/output/snps/finemap/",trait,"/SUSIE/window.L_1/",i,".",lead_snp,".susie.cred_sets.txt")
+  f.cred_sets = paste0("/oak/stanford/groups/smontgom/amarder/VariantPrioritization/out/finemap/",trait,"/SUSIE/window.L_1/",i,".",lead_snp,".susie.cred_sets.txt")
   fwrite(cred_sets,f.cred_sets,quote = F,na = "NA",sep = "\t",row.names = F,col.names = T)
   
+  # Waste of storage space:
   removeLD(trait,lead_snp,i)
 }
 
