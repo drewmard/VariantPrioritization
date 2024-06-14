@@ -28,6 +28,10 @@ startInd <- ifelse(length(args) < 2,1,as.numeric(args[2]))
 configFileName = "/oak/stanford/groups/smontgom/amarder/HarmonizeGWAS/config/munge.config"
 config = fromJSON(configFileName)
 filePath = paste0(config$output_base_dir,"hg38","/",trait,"/",trait,".v2.txt.gz")
+
+samplesizeFile = "/oak/stanford/groups/smontgom/amarder/HarmonizeGWAS/scripts/sample_size.csv"
+samplesize = fread(samplesizeFile,data.table = F,stringsAsFactors = F)
+NINDIV = trait[samplesize$trait==trait,"N_participants"]
 NINDIV = as.numeric(config$studies[config$studies$study_info==trait,"NINDIV"])
 
 ##########################################################################
@@ -114,24 +118,27 @@ for (i in startInd:M) {
         susie_rss(z_scores, as.matrix(R), n=NINDIV, L = Lval) 
       },
       error = function(e) {
-        print("running with full reference instead...")
-        # Compute LD, except use all individuals instead of just EUR:
-        R = computeLD(trait,lead_snp,i,chrNum=df.sub$chr,eurONLY=FALSE)
-        # R = computeLD(trait,lead_snp,i,chrNum=substring(df.sub$chr,4),eurONLY=FALSE)
-        z_scores = df.gwas.sub2$z
-        lead_snp_ind = which(df.gwas.sub2$snp_id==lead_snp)
-        LD_modify.list = LD_modify(R,z_scores,lead_snp_ind); R = LD_modify.list[[1]]; z_scores = LD_modify.list[[2]]; l = LD_modify.list[[3]]
-        # run susie:
-        rss <- susie_rss(z_scores, as.matrix(R), n=NINDIV, L = Lval)
-        return(rss)
+        NULL
+      #   print("running with full reference instead...")
+      #   # Compute LD, except use all individuals instead of just EUR:
+      #   R = computeLD(trait,lead_snp,i,chrNum=df.sub$chr,eurONLY=FALSE)
+      #   # R = computeLD(trait,lead_snp,i,chrNum=substring(df.sub$chr,4),eurONLY=FALSE)
+      #   z_scores = df.gwas.sub2$z
+      #   lead_snp_ind = which(df.gwas.sub2$snp_id==lead_snp)
+      #   LD_modify.list = LD_modify(R,z_scores,lead_snp_ind); R = LD_modify.list[[1]]; z_scores = LD_modify.list[[2]]; l = LD_modify.list[[3]]
+      #   # run susie:
+      #   rss <- susie_rss(z_scores, as.matrix(R), n=NINDIV, L = Lval)
+      #   return(rss)
       }
     )
-    # process susie results,
-    processed_susie = process_susie_results(df=df.gwas.sub2[l,],rss)
-    va =   processed_susie[[1]]
-    cred_sets =   processed_susie[[2]]
-    cred_sets$Lval = Lval
-    did_converge = cred_sets$converged[1]
+    if (!is.null(rss)) {
+      # process susie results,
+      processed_susie = process_susie_results(df=df.gwas.sub2[l,],rss)
+      va =   processed_susie[[1]]
+      cred_sets =   processed_susie[[2]]
+      cred_sets$Lval = Lval
+      did_converge = cred_sets$converged[1]
+    }
     Lval=Lval-1
   }
   
