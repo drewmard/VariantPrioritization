@@ -31,8 +31,8 @@ filePath = paste0(config$output_base_dir,"hg38","/",trait,"/",trait,".v2.txt.gz"
 
 samplesizeFile = "/oak/stanford/groups/smontgom/amarder/HarmonizeGWAS/scripts/sample_size.csv"
 samplesize = fread(samplesizeFile,data.table = F,stringsAsFactors = F)
-NINDIV = trait[samplesize$trait==trait,"N_participants"]
-NINDIV = as.numeric(config$studies[config$studies$study_info==trait,"NINDIV"])
+NINDIV = samplesize[samplesize$trait==trait,"N_participants"]
+# NINDIV = as.numeric(config$studies[config$studies$study_info==trait,"NINDIV"])
 
 ##########################################################################
 
