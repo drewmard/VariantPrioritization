@@ -4,7 +4,7 @@
 
 # conda activate r
 
-# trait <- "Lupus_Bentham_2015"; newGWAS = TRUE
+# trait <- "MajorDepression_Meng_2024"; newGWAS = TRUE
 
 print("Loading packages and functions...")
 suppressMessages(suppressWarnings(library(data.table)))
@@ -17,7 +17,7 @@ print("Packages and functions loaded.")
 
 # parameters:
 # trait <- "Lupus_Bentham_2015"; newGWAS = TRUE
-trait="Alzheimers_Bellenguez_2022"
+trait="MajorDepression_Meng_2024"
 args <- commandArgs(trailingOnly = TRUE)
 trait <- args[1]
 startInd <- ifelse(length(args) < 2,1,as.numeric(args[2]))
@@ -25,7 +25,7 @@ startInd <- ifelse(length(args) < 2,1,as.numeric(args[2]))
 ##########################################################################
 
 # can also hard call the GWAS file path and number of individuals in the GWAS
-configFileName = "/oak/stanford/groups/smontgom/amarder/HarmonizeGWAS/config/munge.config"
+configFileName = "/oak/stanford/groups/smontgom/amarder/HarmonizeGWAS/config/munge2.config"
 config = fromJSON(configFileName)
 filePath = paste0(config$output_base_dir,"hg38","/",trait,"/",trait,".v2.txt.gz")
 
