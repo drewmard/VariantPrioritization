@@ -17,7 +17,7 @@ print("Packages and functions loaded.")
 
 # parameters:
 # trait <- "Lupus_Bentham_2015"; newGWAS = TRUE
-trait="MajorDepression_Meng_2024"
+trait="BMI_Yengo_2018"
 args <- commandArgs(trailingOnly = TRUE)
 trait <- args[1]
 startInd <- ifelse(length(args) < 2,1,as.numeric(args[2]))
